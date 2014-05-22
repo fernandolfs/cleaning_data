@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<!-- saved from url=(0014)about:internet -->
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta http-equiv="x-ua-compatible" content="IE=9" >
+
+<title>Getting and Cleaning Data</title>
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 12px;
+   margin: 8px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 { 
+   font-size:2.2em; 
+}
+
+h2 { 
+   font-size:1.8em; 
+}
+
+h3 { 
+   font-size:1.4em; 
+}
+
+h4 { 
+   font-size:1.0em; 
+}
+
+h5 { 
+   font-size:0.9em; 
+}
+
+h6 { 
+   font-size:0.8em; 
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre {	
+   margin-top: 0;
+   max-width: 95%;
+   border: 1px solid #ccc;
+   white-space: pre-wrap;
+}
+
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code.r, code.cpp {
+   background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * { 
+      background: transparent !important; 
+      color: black !important; 
+      filter:none !important; 
+      -ms-filter: none !important; 
+   }
+
+   body { 
+      font-size:12pt; 
+      max-width:100%; 
+   }
+       
+   a, a:visited { 
+      text-decoration: underline; 
+   }
+
+   hr { 
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote { 
+      padding-right: 1em; 
+      page-break-inside: avoid; 
+   }
+
+   tr, img { 
+      page-break-inside: avoid; 
+   }
+
+   img { 
+      max-width: 100% !important; 
+   }
+
+   @page :left { 
+      margin: 15mm 20mm 15mm 10mm; 
+   }
+     
+   @page :right { 
+      margin: 15mm 10mm 15mm 20mm; 
+   }
+
+   p, h2, h3 { 
+      orphans: 3; widows: 3; 
+   }
+
+   h2, h3 { 
+      page-break-after: avoid; 
+   }
+}
+
+</style>
+
+
+
+
+
+</head>
+
+<body>
+<h1>Getting and Cleaning Data</h1>
+
+<h2>Setup environment</h2>
+
+<ul>
+<li><p>download files at <a href="https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip">https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip</a></p></li>
+<li><p>unzip files under a working directory</p></li>
+<li><p>set the variable &ldquo;workdir&rdquo; with the path to your working directory</p></li>
+</ul>
+
+<pre><code>work_dir &lt;- &quot;your path here&quot;
+</code></pre>
+
+<h2>Running the script</h2>
+
+<ul>
+<li><p>source the file run_analysis.R</p>
+
+<pre><code>source(&quot;./run_analysis.R&quot;)
+</code></pre></li>
+<li><p>the result dataset is named tidy.txt</p></li>
+</ul>
+
+<h2>Step by Step description</h2>
+
+<ul>
+<li><p>At first some environment config is done</p>
+
+<pre><code>work_dir &lt;- &quot;./&quot;
+cur_dir &lt;- getwd()
+setwd(work_dir)
+</code></pre></li>
+<li><p>Then the script loads the activity and feature labels </p>
+
+<pre><code>features &lt;- read.table(&quot;./data/features.txt&quot;)
+ac &lt;- read.table(&quot;./data/activity_labels.txt&quot;)
+</code></pre></li>
+<li><p>The function <code>prepareData</code></p>
+
+<pre><code>prepareData &lt;- function(measures, subjects, activities)
+{
+x &lt;- read.table(measures)
+colnames(x) &lt;- features$V2
+
+test &lt;- x[,grep(&quot;mean&quot;, features$V2, ignore.case=TRUE)]
+
+test &lt;- cbind(x[,grep(c(&quot;std&quot;), features$V2, ignore.case=TRUE)],test)
+
+test &lt;- cbind(read.table(activities), test)
+colnames(test)[1] &lt;- &quot;activities&quot;
+
+test &lt;- cbind(read.table(subjects), test)
+colnames(test)[1] &lt;- &quot;subjects&quot;
+
+test
+}
+</code></pre></li>
+<li><p>It is used to do the following tasks for both train and test data:</p>
+
+<ul>
+<li>load the measures file</li>
+<li>select only mean and std features</li>
+<li>add the subjects column</li>
+<li>add the activities column</li>
+<li>set columns names</li>
+<li>return the new dataset</li>
+</ul></li>
+<li><p>With the function prepareData in place the script loads and prepare both train and test data</p>
+
+<pre><code>data &lt;- rbind(
+##read &amp; combine test data
+prepareData(
+&quot;./data/test/X_test.txt&quot;, 
+&quot;./data/test/subject_test.txt&quot;,
+&quot;./data/test/y_test.txt&quot;
+),
+
+##read &amp; combine train data
+train &lt;- prepareData(
+&quot;./data/train/X_train.txt&quot;, 
+&quot;./data/train/subject_train.txt&quot;,
+&quot;./data/train/y_train.txt&quot;
+)
+)
+</code></pre></li>
+<li><p>then it adds one column with ativity names merging the activity names loaded before with the function´s resultant dataset</p>
+
+<pre><code>data &lt;- merge(x=data, y=ac, by.x=&quot;activities&quot;, by.y=&quot;V1&quot;)
+colnames(data)[length(colnames(data))] &lt;- &quot;activity_name&quot;
+</code></pre></li>
+<li><p>and calculates the mean of the selected mesures for each activity and subject by melting and casting</p>
+
+<pre><code>tidy &lt;- melt(data, c(&quot;activities&quot;, &quot;subjects&quot;, &quot;activity_name&quot;))
+tidy &lt;- dcast(z, activity_name + subjects ~ variable, mean)
+</code></pre></li>
+<li><p>finally the script writes down the tidy data file and restore the working path</p>
+
+<pre><code>write.csv(tidy, &quot;tidy.txt&quot;)
+setwd(cur_dir)
+</code></pre></li>
+<li><p>the result file is named <em>tidy.txt</em> at the workdir</p></li>
+</ul>
+
+</body>
+
+</html>
+

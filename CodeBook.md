@@ -1,39 +1,50 @@
-# initialize work variables
-## working with paths
-work_dir <- "C:\\projects\\coursera\\cleaning_data\\cleaning_data\\"
+# Step by Step description
+
+* At first some environment config is done
+```
+work_dir <- "./"
 cur_dir <- getwd()
 setwd(work_dir)
+```
 
-library(reshape2)
-#reading feature names
+* Then the script loads the activity and feature labels 
+```
 features <- read.table("./data/features.txt")
 ac <- read.table("./data/activity_labels.txt")
+```
 
-##function to load and prepare data
+* The function ```prepareData```
+```
 prepareData <- function(measures, subjects, activities)
 {
-  ##read xdata
   x <- read.table(measures)
   colnames(x) <- features$V2
   
-  ##select only mean measures
   test <- x[,grep("mean", features$V2, ignore.case=TRUE)]
   
-  ##select only std measures and colbind it to mean measures
   test <- cbind(x[,grep(c("std"), features$V2, ignore.case=TRUE)],test)
   
-  ##bind the activities
   test <- cbind(read.table(activities), test)
   colnames(test)[1] <- "activities"
   
-  ##and bind the subjects
   test <- cbind(read.table(subjects), test)
   colnames(test)[1] <- "subjects"
   
   test
 }
+```
 
-##merge all data
+* It is used to do the following tasks for both train and test data:
+ * load the measures file
+ * select only mean and std features
+ * add the subjects column
+ * add the activities column
+ * set columns names
+ * return the new dataset
+
+
+* With the function prepareData in place the script loads and prepare both train and test data
+```
 data <- rbind(
   ##read & combine test data
   prepareData(
@@ -49,16 +60,24 @@ data <- rbind(
     "./data/train/y_train.txt"
     )
   )
+```
 
-##add activity names
+* then it adds one column with ativity names merging the activity names loaded before with the function´s resultant dataset
+```
 data <- merge(x=data, y=ac, by.x="activities", by.y="V1")
 colnames(data)[length(colnames(data))] <- "activity_name"
+```
 
+* and calculates the mean of the selected mesures for each activity and subject by melting and casting
+```
 tidy <- melt(data, c("activities", "subjects", "activity_name"))
 tidy <- dcast(tidy, activity_name + subjects ~ variable, mean)
+```
 
-#writing the dataframe as csv
+* finally the script writes down the tidy data file and restore the working path
+```
 write.csv(tidy, "tidy.txt")
-
-#set back dir
 setwd(cur_dir)
+```
+
+* the result file is named *tidy.txt* at the workdir
